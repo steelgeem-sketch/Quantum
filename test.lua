@@ -32,6 +32,24 @@
 local PALANTIRX_BUNDLE_URL   = "https://api.luarmor.net/files/v4/loaders/53b23657687b6fde91ec5a12589d6a4c.lua"
 local PIRACY_SCREEN_DURATION = 8
 
+-- Preserve script_key across the Luarmor v4 setfenv sandbox. The buyer's
+-- loader sets `script_key` as a plain global; Luarmor's loader consumes
+-- it during auth, then the protected bundle runs in a sandbox where that
+-- global is no longer visible. Copying to getgenv() (executor-level env,
+-- survives setfenv) gives BlacklistCheck.discoverUserKey a reliable place
+-- to find it (it reads getgenv().PalantirX_UserKey as a fallback).
+--
+-- Without this, the bundle halts with "No license key found." before it
+-- ever calls /v1/check — no piracy screen, no embed, just an instant kick
+-- that looks like a crash from the user's seat.
+if getgenv then
+    local sk = (getgenv() or {}).script_key
+            or rawget(_G, "script_key")
+    if sk and sk ~= "" then
+        getgenv().PalantirX_UserKey = sk
+    end
+end
+
 -- Audio toggle. Set false to skip the download+play path entirely while
 -- diagnosing crashes — if the screen renders without audio, the song is
 -- the culprit (likely a getcustomasset size/format issue on the executor).

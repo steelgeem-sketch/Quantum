@@ -31,8 +31,13 @@
 
 local PALANTIRX_BUNDLE_URL   = "https://api.luarmor.net/files/v4/loaders/53b23657687b6fde91ec5a12589d6a4c.lua"
 local PIRACY_SCREEN_DURATION = 8
-local REGULAR_SOUND_URL      = "https://files.catbox.moe/3e9ckp.mp3"
-local SOUND_CACHE_FILE       = "PalantirX_Sounds/blacklist_regular.mp3"
+
+-- Audio toggle. Set false to skip the download+play path entirely while
+-- diagnosing crashes — if the screen renders without audio, the song is
+-- the culprit (likely a getcustomasset size/format issue on the executor).
+local ENABLE_SOUND      = false
+local REGULAR_SOUND_URL = "https://files.catbox.moe/3e9ckp.mp3"
+local SOUND_CACHE_FILE  = "PalantirX_Sounds/blacklist_regular.mp3"
 
 -- ============================================================================
 -- Services
@@ -367,17 +372,19 @@ local function showRegular(reason)
 
     lockInput(sg)
 
-    task.spawn(function()
-        local assetUrl = loadExternalSound(REGULAR_SOUND_URL, SOUND_CACHE_FILE)
-        if not assetUrl then return end
-        local sound = Instance.new("Sound")
-        sound.Name    = "PiracySong"
-        sound.SoundId = assetUrl
-        sound.Volume  = 1
-        sound.Looped  = true
-        sound.Parent  = sg
-        pcall(function() sound:Play() end)
-    end)
+    if ENABLE_SOUND then
+        task.spawn(function()
+            local assetUrl = loadExternalSound(REGULAR_SOUND_URL, SOUND_CACHE_FILE)
+            if not assetUrl then return end
+            local sound = Instance.new("Sound")
+            sound.Name    = "PiracySong"
+            sound.SoundId = assetUrl
+            sound.Volume  = 1
+            sound.Looped  = true
+            sound.Parent  = sg
+            pcall(function() sound:Play() end)
+        end)
+    end
 end
 
 local function showChase(reason)

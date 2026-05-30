@@ -39,6 +39,12 @@ local ENABLE_SOUND      = false
 local REGULAR_SOUND_URL = "https://files.catbox.moe/3e9ckp.mp3"
 local SOUND_CACHE_FILE  = "PalantirX_Sounds/blacklist_regular.mp3"
 
+-- Bisection toggles. While debugging the crash, flip these to skip layers
+-- one at a time. When you find the combination that doesn't crash, the
+-- LAST toggle you turned back on is the offender.
+local MINIMAL_SCREEN    = true   -- skip CRT effects (vignette/scanlines/rolling bar/flicker) — only header + body labels
+local SKIP_INPUT_LOCK   = true   -- skip lockInput entirely (no modal blocker, no key sink, no CoreGui hide)
+
 -- ============================================================================
 -- Services
 -- ============================================================================
@@ -305,10 +311,12 @@ local function showRegular(reason)
     bg.ZIndex = 1
     bg.Parent = sg
 
-    buildVignette(bg)
-    buildScanlines(bg)
-    buildRollingBar(bg)
-    buildFlicker(bg)
+    if not MINIMAL_SCREEN then
+        buildVignette(bg)
+        buildScanlines(bg)
+        buildRollingBar(bg)
+        buildFlicker(bg)
+    end
 
     local header = Instance.new("TextLabel")
     header.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -370,7 +378,9 @@ local function showRegular(reason)
     local host = getHostGui() or LocalPlayer:FindFirstChild("PlayerGui")
     pcall(function() sg.Parent = host end)
 
-    lockInput(sg)
+    if not SKIP_INPUT_LOCK then
+        lockInput(sg)
+    end
 
     if ENABLE_SOUND then
         task.spawn(function()
@@ -427,7 +437,9 @@ local function showChase(reason)
     local host = getHostGui() or LocalPlayer:FindFirstChild("PlayerGui")
     pcall(function() sg.Parent = host end)
 
-    lockInput(sg)
+    if not SKIP_INPUT_LOCK then
+        lockInput(sg)
+    end
 end
 
 -- ============================================================================
